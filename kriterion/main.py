@@ -1,6 +1,6 @@
 """Kriterion API entrypoint.
 
-Run locally:  uvicorn index:app --reload --port 8000
+Run locally:  uvicorn kriterion.main:app --reload --port 8000
 """
 
 from __future__ import annotations
@@ -12,10 +12,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from api.core.errors import KriterionError
-from api.core.middleware import REQUEST_ID_HEADER, RequestIDMiddleware, get_request_id
-from api.core.settings import API_VERSION, configure_logging, get_settings
-from api.routers import linearity_router
+from kriterion.core.errors import KriterionError
+from kriterion.core.middleware import REQUEST_ID_HEADER, RequestIDMiddleware, get_request_id
+from kriterion.core.settings import API_VERSION, configure_logging, get_settings
+from kriterion.routers import linearity_router
 
 logger = logging.getLogger("kriterion_api")
 

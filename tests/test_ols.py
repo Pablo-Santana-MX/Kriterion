@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 from scipy import stats
 
-from api.core.errors import CalculationError
-from api.services.ols import fit_ols
+from kriterion.core.errors import CalculationError
+from kriterion.services.ols import fit_ols
 
 CONC = [10.0, 20.0, 30.0, 40.0, 50.0]
 AREAS = [12520.0, 24985.0, 37540.0, 50012.0, 62490.0]

@@ -6,12 +6,12 @@ import os
 
 from fastapi import APIRouter, File, Form, Request, UploadFile
 
-from api.core.errors import PayloadTooLargeError
-from api.core.limits import DEFAULT_CONFIDENCE_LEVEL, DEFAULT_R_SQUARED_LIMIT, MAX_UPLOAD_BYTES
-from api.core.middleware import get_request_id
-from api.schemas.linearity import LinearityRequest, LinearityResponse
-from api.services.ingestion import parse_linearity_csv
-from api.services.linearity import run_linearity
+from kriterion.core.errors import PayloadTooLargeError
+from kriterion.core.limits import DEFAULT_CONFIDENCE_LEVEL, DEFAULT_R_SQUARED_LIMIT, MAX_UPLOAD_BYTES
+from kriterion.core.middleware import get_request_id
+from kriterion.schemas.linearity import LinearityRequest, LinearityResponse
+from kriterion.services.ingestion import parse_linearity_csv
+from kriterion.services.linearity import run_linearity
 
 router = APIRouter(prefix="/api/v1/linearity", tags=["Linearity"])
 

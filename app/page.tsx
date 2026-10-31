@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Vacío = mismo origen (Vercel rewrite /api/* -> index.py). En local: NEXT_PUBLIC_API_URL=http://localhost:8000
+// Mismo origen: en Vercel /api/* va a la función Python; en local next.config.mjs reenvía a uvicorn.
+// NEXT_PUBLIC_API_URL es opcional (solo si el backend vive en otro dominio).
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 interface Interval { lower: number; upper: number }

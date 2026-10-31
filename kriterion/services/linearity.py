@@ -8,18 +8,18 @@ import logging
 from collections.abc import Sequence
 from datetime import datetime, timezone
 
-from api.core.errors import InputValidationError
-from api.core.limits import MIN_CONCENTRATION_LEVELS
-from api.core.settings import API_VERSION, ENGINE_NAME
-from api.schemas.linearity import (
+from kriterion.core.errors import InputValidationError
+from kriterion.core.limits import MIN_CONCENTRATION_LEVELS
+from kriterion.core.settings import API_VERSION, ENGINE_NAME
+from kriterion.schemas.linearity import (
     AuditTrail,
     CoefficientStats,
     Criterion,
     Interval,
     LinearityResponse,
 )
-from api.services.ingestion import ParsedCalibration
-from api.services.ols import OLSResult, fit_ols
+from kriterion.services.ingestion import ParsedCalibration
+from kriterion.services.ols import OLSResult, fit_ols
 
 logger = logging.getLogger("kriterion_api.linearity")
 

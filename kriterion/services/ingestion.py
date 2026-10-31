@@ -18,8 +18,8 @@ import io
 import re
 from dataclasses import dataclass, field
 
-from api.core.errors import IngestionError
-from api.core.limits import MAX_INGESTION_ISSUES_REPORTED, MAX_POINTS, MAX_UPLOAD_BYTES
+from kriterion.core.errors import IngestionError
+from kriterion.core.limits import MAX_INGESTION_ISSUES_REPORTED, MAX_POINTS, MAX_UPLOAD_BYTES
 
 # Deliberately stricter than float(): rejects 'nan', 'inf', '1_000', ' 0x10 '.
 _NUMERIC = re.compile(r"^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$")

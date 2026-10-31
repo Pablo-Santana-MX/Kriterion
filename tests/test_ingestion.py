@@ -4,8 +4,8 @@ import hashlib
 
 import pytest
 
-from api.core.errors import IngestionError
-from api.services.ingestion import parse_linearity_csv
+from kriterion.core.errors import IngestionError
+from kriterion.services.ingestion import parse_linearity_csv
 
 
 def test_basic_with_header():

@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from api.core.limits import (
+from kriterion.core.limits import (
     DEFAULT_CONFIDENCE_LEVEL,
     DEFAULT_R_SQUARED_LIMIT,
     MAX_POINTS,

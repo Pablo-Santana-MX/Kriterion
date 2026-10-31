@@ -12,7 +12,7 @@
 
 Kriterion automates the statistical evaluation of High-Performance Liquid Chromatography (HPLC) methods for pharmaceutical QC and R&D laboratories. The numerical core is a small, dependency-light Python service that performs Ordinary Least Squares (OLS) linearity assessment, evaluates acceptance criteria, and stamps every result with a traceable audit record.
 
-**Contents** — [Why Kriterion](#-why-kriterion) · [Architecture](#-architecture) · [Quick start](#-quick-start) · [API reference](#-api-reference) · [Statistical methodology](#-statistical-methodology) · [Data ingestion](#-data-ingestion-csv) · [Data integrity](#-data-integrity-alcoa) · [Codebase tour](#-codebase-tour) · [Testing](#-testing) · [Configuration](#-configuration) · [Status & roadmap](#-status--roadmap)
+**Contents** — [Why Kriterion](#-why-kriterion) · [Architecture](#-architecture) · [Quick start](#-quick-start) · [API reference](#-api-reference) · [Statistical methodology](#-statistical-methodology) · [Data ingestion](#-data-ingestion-csv) · [Data integrity](#-data-integrity-alcoa) · [Codebase tour](#-codebase-tour) · [Deployment](#-deployment-vercel) · [Testing](#-testing) · [Configuration](#-configuration) · [Status & roadmap](#-status--roadmap)
 
 ---
 
@@ -36,8 +36,8 @@ Kriterion moves the mathematics out of the spreadsheet and the browser into one 
 
 ```mermaid
 flowchart LR
-    UI[Next.js 14 UI<br/>page.tsx] -- JSON / multipart --> API
-    subgraph API[FastAPI service · index.py]
+    UI[Next.js 14 UI<br/>app/page.tsx] -- JSON / multipart --> API
+    subgraph API[FastAPI · kriterion/main.py]
         MW[RequestIDMiddleware<br/>CORS · error envelopes] --> R[routers/linearity_router]
         R --> S[services/linearity<br/>design rules · verdict · audit]
         R --> I[services/ingestion<br/>strict CSV parser]
@@ -57,12 +57,15 @@ Layering rule: **dependencies point inward.** `ols.py` knows nothing about HTTP,
 git clone <your-repo-url> kriterion && cd kriterion
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
+pytest                                           # run the backend test suite
+uvicorn kriterion.main:app --reload --port 8000  # API on :8000
 
-pytest                                   # run the test suite
-uvicorn index:app --reload --port 8000   # start the API
+# in a second terminal
+npm install
+npm run dev                                      # UI on :3000, proxies /api/* to :8000
 ```
 
-Interactive docs: <http://localhost:8000/api/docs>
+Open <http://localhost:3000>. Interactive API docs: <http://localhost:8000/api/docs>
 
 ```bash
 curl -s localhost:8000/api/v1/linearity/calculate \
@@ -244,9 +247,13 @@ Regulatory items such as 21 CFR Part 11 (electronic signatures, access control, 
 
 ## 🗂 Codebase tour
 
+One repository, one root, one Vercel project.
+
 ```
-index.py                      App factory, CORS, middleware, error handlers, /api/health
-api/
+app/                          Next.js 14 App Router (layout.tsx, page.tsx, globals.css)
+api/index.py                  Vercel entrypoint: exposes the ASGI app, nothing else
+kriterion/                    Python package (all backend logic)
+├── main.py                   App factory, CORS, middleware, error handlers, /api/health
 ├── core/
 │   ├── settings.py           Env-driven immutable settings; UTC logging config
 │   ├── limits.py             Shared constants (min levels, max points, upload size)
@@ -259,10 +266,27 @@ api/
 │   └── linearity.py          Design rules, criteria, verdict, audit record
 └── routers/linearity_router.py   HTTP ↔ service glue
 tests/                        OLS vs SciPy · ingestion edge cases · service · HTTP contract
-page.tsx                      Next.js UI (see status below)
+vercel.json                   Routes /api/* to api/index.py
+package.json · requirements.txt   Frontend and backend dependencies
 ```
 
+The backend lives in `kriterion/`, not `api/`, on purpose: Vercel turns every Python file under `api/` into a serverless function, so `api/` holds only the entrypoint.
+
 Engineering conventions: full type hints, frozen dataclasses with `slots`, `from __future__ import annotations`, no global mutable state, CPU-bound routes declared `def` so FastAPI runs them in its threadpool, and `async` only where the route awaits I/O (file upload).
+
+---
+
+## 🚢 Deployment (Vercel)
+
+A single Vercel project serves both halves from the same domain, so there is no CORS configuration and no cross-project variables.
+
+1. Import the repository in Vercel. Leave **Root Directory** empty (`./`) and **Framework Preset** on *Next.js*.
+2. No environment variables are required. Deploy.
+3. Verify: `/api/health` returns `{"status":"operational",…}`, `/api/docs` shows the OpenAPI UI, and the page returns **PASS** for the default dataset.
+
+How it works: Vercel builds the Next.js app and, because `api/index.py` exists, also builds it as a Python function with the dependencies in `requirements.txt`. `vercel.json` rewrites every `/api/*` request to that function, which hands it to FastAPI with the original path. `uvicorn` is a dev-only dependency and is not installed in production.
+
+Notes: `numpy` and `scipy` are the heaviest dependencies; if a deploy ever fails on bundle size, `scipy` is only used for the Student-t quantile and can be replaced. Previews and production use the same configuration.
 
 ---
 
@@ -285,7 +309,7 @@ pytest -q
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `ALLOWED_ORIGINS` | `http://localhost:3000` | Comma-separated CORS origins. `*` is **refused** because credentialed CORS with a wildcard is invalid and unsafe |
+| `ALLOWED_ORIGINS` | `http://localhost:3000` | Comma-separated CORS origins. Not needed when UI and API share one domain (the Vercel setup). `*` is **refused** because credentialed CORS with a wildcard is invalid and unsafe |
 | `LOG_LEVEL` | `INFO` | `DEBUG`…`CRITICAL` |
 | `KRITERION_ENV` | `development` | Environment label |
 
@@ -295,7 +319,7 @@ pytest -q
 
 **Backend** — linearity engine, strict ingestion, audit stamping and error contract are implemented and tested.
 
-**Frontend** — `page.tsx` posts to `/api/v1/linearity/calculate` and renders the server's `verdict`, coefficients and input SHA-256. The exported TXT report is built from the API response (UTC timestamp, request ID, engine version, input hash, confidence intervals). The client-side CSV import is strict: it aborts on any malformed row instead of skipping it. Set `NEXT_PUBLIC_API_URL` for local development (e.g. `http://localhost:8000`); leave it empty when the API is served from the same origin.
+**Frontend** — `app/page.tsx` posts to `/api/v1/linearity/calculate` on its own origin and renders the server's `verdict`, coefficients and input SHA-256. The exported TXT report is built from the API response (UTC timestamp, request ID, engine version, input hash, confidence intervals). The client-side CSV import is strict: it aborts on any malformed row instead of skipping it. `NEXT_PUBLIC_API_URL` is optional and only needed if the API is hosted on a different domain.
 
 Planned:
 

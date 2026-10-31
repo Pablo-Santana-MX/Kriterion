@@ -8,7 +8,7 @@ pytest.importorskip("multipart")
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from index import create_app  # noqa: E402
+from kriterion.main import create_app  # noqa: E402
 
 client = TestClient(create_app(), raise_server_exceptions=False)
 BODY = {

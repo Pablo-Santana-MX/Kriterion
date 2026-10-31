@@ -25,7 +25,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy import stats
 
-from api.core.errors import CalculationError
+from kriterion.core.errors import CalculationError
 
 FloatArray = NDArray[np.float64]
 
